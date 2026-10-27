@@ -31,7 +31,6 @@
       <div class="side-divider"></div>
       <div class="side-label">JOGOS</div>
       <nav class="game-nav" id="gameNav" aria-label="Filtrar por jogo"></nav>
-      <button class="manage-games" id="manageGamesButton"><span>＋</span> Gerenciar jogos</button>
       <div class="sidebar-bottom"><div class="mini-profile"><div class="avatar">J</div><div><strong>Meu canal</strong><span>Seu espaço gamer</span></div><button class="more-btn" aria-label="Mais opções">···</button></div><div class="sidebar-note">Feito pra curtir cada play. <span>♥</span></div></div>
     </aside>
 
@@ -42,8 +41,6 @@
         <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar vídeos, jogos..." aria-label="Buscar vídeos" /><kbd>⌘ K</kbd></label>
         <button class="icon-button" id="themeButton" aria-label="Alternar tema" title="Alternar tema">☼</button>
         <button class="install-button" id="installButton" aria-label="Instalar Replay" hidden>⇩ Instalar app</button>
-        <button class="upload-button" id="uploadButton"><span>＋</span> Enviar vídeo</button>
-        <input id="fileInput" type="file" accept="video/*" hidden />
       </header>
 
       <section class="hero" id="ao-vivo">
@@ -51,7 +48,7 @@
         <div class="hero-content"><div class="eyebrow"><span class="eyebrow-dot"></span> SEU CANAL, SUAS PARTIDAS</div>
           <h1>Cada partida<br />merece um <em>replay.</em></h1>
           <p>Os melhores momentos do seu jogo, reunidos<br class="desktop-break" /> em um lugar só. Dá o play e vem comigo.</p>
-          <div class="hero-actions"><a class="primary-cta" href="#videos">▶ <span>Explorar vídeos</span></a><button class="secondary-cta" id="heroUpload">＋ Enviar partida</button></div>
+          <div class="hero-actions"><a class="primary-cta" href="#videos">▶ <span>Explorar vídeos</span></a></div>
           <div class="hero-proof"><div class="proof-avatars"><span>🎮</span><span>💜</span><span>✨</span></div><span>Momentos que valem rever <b>∞</b></span></div>
         </div>
         <div class="hero-art" aria-hidden="true"><div class="art-ring ring-outer"></div><div class="art-ring ring-inner"></div><div class="art-glow"></div><div class="art-controller"><div class="controller-top"><span class="ctrl-speaker"></span><span class="ctrl-speaker"></span></div><div class="dpad"><i></i><i></i><i></i><i></i><b></b></div><div class="ctrl-center"><span></span><span></span></div><div class="face-buttons"><i></i><i></i><i></i><i></i></div><div class="controller-bottom"><span></span><span></span></div></div><div class="floating-tag tag-live"><span class="live-pulse"></span> NO SEU TEMPO</div><div class="floating-tag tag-play">▶ <b>PLAY</b></div><div class="spark spark-a">✦</div><div class="spark spark-b">✧</div></div>
@@ -63,15 +60,14 @@
         <div class="section-heading"><div><div class="section-kicker">A SUA COLEÇÃO</div><h2>Vídeos <span>em destaque</span><span class="heading-spark">✦</span></h2></div><button class="view-all" id="viewAll">Ver todos <span>↗</span></button></div>
         <div class="filter-row" id="filterRow" role="group" aria-label="Filtrar vídeos"></div>
         <div class="video-grid" id="videoGrid"></div>
-        <div class="empty-state" id="emptyState" hidden><div>⌕</div><strong>Nenhum vídeo por aqui</strong><span>Tente outro filtro ou envie uma nova partida.</span></div>
+        <div class="empty-state" id="emptyState" hidden><div>⌕</div><strong>Nenhum vídeo por aqui</strong><span>Tente outro filtro ou confira a coleção mais tarde.</span></div>
       </section>
       <footer><span class="footer-mark">replay<span>.</span></span><span>Seu cantinho gamer, feito com <b>♥</b></span><span class="footer-right">© 2025 · Só dar play</span></footer>
     </main>
   </div>
   <div class="toast" id="toast" role="status"></div>
   <div class="modal-backdrop" id="videoModal" hidden><div class="video-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Fechar">×</button><div class="modal-player" id="modalPlayer"></div><div class="modal-info"><span class="modal-game" id="modalGame"></span><h2 id="modalTitle"></h2><p id="modalMeta"></p></div><section class="modal-social" aria-label="Curtidas e comentários"><button class="modal-like" id="modalLike">👍 <span id="modalLikeText">Curtir</span> <b id="modalLikeCount">0</b></button><form id="commentForm" class="comment-form"><input id="commentInput" maxlength="500" placeholder="Deixe um comentário carinhoso..." aria-label="Escrever comentário" required /><button type="submit" class="upload-button">Comentar</button></form><div class="comments-list" id="commentsList"></div></section></div></div>
-  <div class="modal-backdrop" id="editModal" hidden><form class="edit-modal" id="editForm" role="dialog" aria-modal="true" aria-labelledby="editHeading"><button class="modal-close" type="button" id="editClose" aria-label="Fechar">×</button><div class="section-kicker">PERSONALIZAR VÍDEO</div><h2 id="editHeading">Editar vídeo</h2><label class="edit-label">Nome do vídeo<input id="editTitle" maxlength="100" required /></label><label class="edit-label">Jogo<select id="editGame"></select></label><label class="edit-label">Capa do vídeo<span class="cover-picker"><img id="coverPreview" alt="Prévia da capa atual" /><span id="coverPrompt">Escolher uma imagem</span><input id="coverInput" type="file" accept="image/*" /></span></label><label class="edit-label">Legenda do vídeo (.vtt)<span class="caption-picker"><span id="captionStatus">Nenhuma legenda adicionada</span><input id="captionInput" type="file" accept=".vtt,text/vtt" /></span></label><div class="edit-actions"><button type="button" class="secondary-cta" id="removeCover">Remover capa</button><span class="edit-secondary-actions"><button type="button" class="secondary-cta" id="removeCaption">Remover legenda</button><button type="submit" class="upload-button">Salvar alterações</button></span></div></form></div>
-  <div class="modal-backdrop" id="gamesModal" hidden><section class="edit-modal games-modal" role="dialog" aria-modal="true" aria-labelledby="gamesHeading"><button class="modal-close" type="button" id="gamesClose" aria-label="Fechar">×</button><div class="section-kicker">SUA BIBLIOTECA</div><h2 id="gamesHeading">Gerenciar jogos</h2><form id="addGameForm" class="add-game-form"><input id="newGameName" maxlength="30" placeholder="Nome do jogo novo" aria-label="Nome do jogo novo" required /><button type="submit" class="upload-button">＋ Adicionar</button></form><div id="gamesList" class="games-list"></div><p class="games-hint">Ao remover um jogo, os vídeos dele continuam na biblioteca e passam para “Outros”.</p></section></div>
+  <script src="catalogo.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

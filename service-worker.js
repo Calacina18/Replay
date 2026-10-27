@@ -1,8 +1,9 @@
-const CACHE_NAME = 'replay-app-v2';
+const CACHE_NAME = 'replay-app-v4';
 const APP_FILES = [
   './',
   './index.html',
   './styles.css',
+  './catalogo.js',
   './app.js',
   './app.webmanifest',
   './icons/replay.svg',
@@ -24,8 +25,10 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
-  // API responses contain private library data; keep them out of the offline cache.
+  // Ignore any leftover API path if the site is served through another platform.
   if (requestUrl.pathname.startsWith('/api/')) return;
+  // Gameplay files can be very large; do not fill the offline cache with videos.
+  if (/\.(mp4|mov|mkv|webm|vtt)$/i.test(requestUrl.pathname)) return;
   event.respondWith(caches.match(event.request).then(cached => {
     if (cached) return cached;
     return fetch(event.request).then(response => {
