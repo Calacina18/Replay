@@ -1,0 +1,16 @@
+name = "replay"
+compatibility_date = "2026-10-26"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "replay-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "replay-media"
+
+[vars]
+ENVIRONMENT = "production"

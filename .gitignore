@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.dev.vars
+.wrangler/
+*.mp4
+*.mov
+*.mkv
+*.webm

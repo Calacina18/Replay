@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Replay — seu canal de gameplay",
+  "short_name": "Replay",
+  "description": "Seu cantinho para guardar e assistir partidas de jogos.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101014",
+  "theme_color": "#101014",
+  "categories": ["entertainment", "games"],
+  "icons": [
+    { "src": "icons/replay-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/replay-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
