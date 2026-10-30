@@ -1,10 +1,11 @@
-const CACHE_NAME = 'replay-app-v4';
+const CACHE_NAME = 'replay-app-v5';
 const APP_FILES = [
   './',
   './index.html',
   './styles.css',
   './catalogo.js',
   './app.js',
+  './firebase-config.js',
   './app.webmanifest',
   './icons/replay.svg',
   './icons/replay-192.png',

@@ -14,6 +14,85 @@ function readStore(key, fallback) { try { const value = JSON.parse(localStorage.
 function getFavorites() { return readStore('replay-favorites', []); }
 function getLikes() { return readStore('replay-likes', {}); }
 function getComments() { return readStore('replay-comments', {}); }
+// ---------- Curtidas e comentários compartilhados (Firebase) ----------
+// Se o firebase-config.js não estiver preenchido, tudo continua funcionando só no navegador (localStorage).
+const cloud = { on: false, db: null, uid: null, likes: {}, comments: [], unsubComments: null, lastCommentAt: 0 };
+const commentDateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+function likeInfo(id) {
+  if (cloud.on) return cloud.likes[id] || { count: 0, mine: false };
+  const mine = Boolean(getLikes()[id]);
+  return { count: mine ? 1 : 0, mine };
+}
+function listenLikes(video) {
+  cloud.db.collection('videos').doc(video.id).collection('likes').onSnapshot(snap => {
+    cloud.likes[video.id] = { count: snap.size, mine: snap.docs.some(doc => doc.id === cloud.uid) };
+    render();
+    if (activeVideoId === video.id) renderSocial(video);
+  }, error => console.warn('Replay: não foi possível ler as curtidas.', error));
+}
+function listenComments(video) {
+  stopComments();
+  if (!cloud.on) return;
+  cloud.unsubComments = cloud.db.collection('videos').doc(video.id).collection('comments').orderBy('createdAt', 'desc').limit(100).onSnapshot(snap => {
+    cloud.comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) }));
+    if (activeVideoId === video.id) renderComments(video);
+  }, error => console.warn('Replay: não foi possível ler os comentários.', error));
+}
+function stopComments() { if (cloud.unsubComments) { cloud.unsubComments(); cloud.unsubComments = null; } cloud.comments = []; }
+async function initCloud() {
+  const config = window.REPLAY_FIREBASE_CONFIG;
+  if (!window.firebase || !config || !config.apiKey || String(config.apiKey).startsWith('COLE_')) return;
+  try {
+    firebase.initializeApp(config);
+    cloud.db = firebase.firestore();
+    const credential = await firebase.auth().signInAnonymously();
+    cloud.uid = credential.user.uid;
+    cloud.on = true;
+    videos.forEach(listenLikes);
+    render();
+    if (activeVideoId) { const video = videos.find(item => item.id === activeVideoId); if (video) { renderSocial(video); listenComments(video); } }
+  } catch (error) { console.warn('Replay: Firebase indisponível, usando o modo local.', error); }
+}
+async function toggleLike(id) {
+  if (cloud.on) {
+    const ref = cloud.db.collection('videos').doc(id).collection('likes').doc(cloud.uid);
+    try {
+      if (likeInfo(id).mine) await ref.delete();
+      else await ref.set({ createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } catch (error) { showToast('Não deu para curtir agora. Tente de novo.'); }
+    return;
+  }
+  const likes = getLikes();
+  if (likes[id]) delete likes[id]; else likes[id] = true;
+  localStorage.setItem('replay-likes', JSON.stringify(likes));
+  render();
+  if (activeVideoId === id) renderSocial(videos.find(video => video.id === id));
+}
+async function postComment(video, name, text) {
+  if (cloud.on) {
+    if (Date.now() - cloud.lastCommentAt < 8000) { showToast('Calma! Espere alguns segundos para comentar de novo.'); return false; }
+    try {
+      await cloud.db.collection('videos').doc(video.id).collection('comments').add({ text, name, uid: cloud.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      cloud.lastCommentAt = Date.now();
+      return true;
+    } catch (error) { showToast('Não foi possível enviar o comentário.'); return false; }
+  }
+  const comments = getComments(); comments[video.id] ||= [];
+  comments[video.id].push({ id: String(Date.now()), text, name, date: new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date()) });
+  localStorage.setItem('replay-comments', JSON.stringify(comments));
+  return true;
+}
+async function removeComment(videoId, commentId) {
+  if (cloud.on) {
+    try { await cloud.db.collection('videos').doc(videoId).collection('comments').doc(commentId).delete(); }
+    catch (error) { showToast('Você só pode apagar os seus próprios comentários.'); }
+    return;
+  }
+  const comments = getComments(); comments[videoId] = (comments[videoId] || []).filter(comment => String(comment.id) !== commentId);
+  localStorage.setItem('replay-comments', JSON.stringify(comments)); renderSocial(videos.find(video => video.id === videoId));
+}
+
 function renderGameControls() {
   const icon = { Valorant: 'V', Minecraft: '◇', Fortnite: 'F', Outros: '✧' };
   const color = { Valorant: 'red', Minecraft: 'green', Fortnite: 'blue', Outros: 'yellow' };
@@ -22,18 +101,23 @@ function renderGameControls() {
 }
 function renderSocial(video) {
   if (!video) return;
-  const likes = getLikes();
+  const info = likeInfo(video.id);
   const modalLike = document.querySelector('#modalLike');
   modalLike.dataset.like = video.id;
-  modalLike.classList.toggle('liked', Boolean(likes[video.id]));
-  document.querySelector('#modalLikeText').textContent = likes[video.id] ? 'Curtido' : 'Curtir';
-  document.querySelector('#modalLikeCount').textContent = likes[video.id] ? '1' : '0';
-  document.querySelector('#commentsList').innerHTML = (getComments()[video.id] || []).map(comment => `<article class="comment-item"><div class="comment-item-head"><span>${escapeHtml(comment.email || 'Vocês')} · ${escapeHtml(comment.date || 'Agora')}</span><button data-delete-comment="${escapeHtml(video.id)}:${escapeHtml(comment.id)}" aria-label="Apagar comentário">Apagar</button></div><p>${escapeHtml(comment.text)}</p></article>`).join('') || '<p class="no-comments">Ainda não tem comentário. Comece a conversa! 💬</p>';
+  modalLike.classList.toggle('liked', info.mine);
+  document.querySelector('#modalLikeText').textContent = info.mine ? 'Curtido' : 'Curtir';
+  document.querySelector('#modalLikeCount').textContent = String(info.count);
+  renderComments(video);
+}
+function renderComments(video) {
+  const list = cloud.on
+    ? cloud.comments.map(comment => ({ id: comment.id, text: comment.text, name: comment.name, mine: comment.uid === cloud.uid, date: comment.createdAt && comment.createdAt.toDate ? commentDateFormat.format(comment.createdAt.toDate()) : 'Agora' }))
+    : (getComments()[video.id] || []).map(comment => ({ id: comment.id, text: comment.text, name: comment.name || comment.email, mine: true, date: comment.date }));
+  document.querySelector('#commentsList').innerHTML = list.map(comment => `<article class="comment-item"><div class="comment-item-head"><span>${escapeHtml(comment.name || 'Visitante')} · ${escapeHtml(comment.date || 'Agora')}</span>${comment.mine ? `<button data-delete-comment="${escapeHtml(video.id)}:${escapeHtml(comment.id)}" aria-label="Apagar comentário">Apagar</button>` : ''}</div><p>${escapeHtml(comment.text)}</p></article>`).join('') || '<p class="no-comments">Ainda não tem comentário. Comece a conversa! 💬</p>';
 }
 function render() {
   renderGameControls();
   const favorites = getFavorites();
-  const likes = getLikes();
   const matching = videos.filter(video => {
     const matchesFilter = state.filter === 'Todos' || video.game === state.filter;
     const text = `${video.title} ${video.game}`.toLocaleLowerCase('pt-BR');
@@ -44,7 +128,7 @@ function render() {
     const thumb = video.url ? `<video src="${escapeHtml(video.url)}" muted preload="metadata"></video>` : `<div class="thumb-pattern"></div><div class="thumb-art">${escapeHtml(video.symbol || '✦')}</div>`;
     const cover = video.coverUrl ? `<img class="custom-cover" src="${escapeHtml(video.coverUrl)}" alt="Capa: ${escapeHtml(video.title)}" />` : '';
     const favorite = favorites.includes(video.id);
-    return `<article class="video-card" data-id="${escapeHtml(video.id)}" tabindex="0" role="button" aria-label="Assistir ${escapeHtml(video.title)}"><div class="thumbnail thumb-${gameKey}">${thumb}${cover}<span class="thumb-play">▶</span><span class="thumb-time">${escapeHtml(video.duration || 'Vídeo')}</span></div><div class="video-info"><div class="card-topline"><span class="game-badge ${gameKey}">${escapeHtml(video.game || 'Outros')}</span><span class="card-actions"><button class="like-button ${likes[video.id] ? 'liked' : ''}" data-like="${escapeHtml(video.id)}" aria-label="Curtir vídeo">👍 <b>${likes[video.id] ? 1 : 0}</b></button><button class="favorite-button ${favorite ? 'liked' : ''}" data-favorite="${escapeHtml(video.id)}" aria-label="${favorite ? 'Remover dos' : 'Adicionar aos'} favoritos">${favorite ? '♥' : '♡'}</button></span></div><h3>${escapeHtml(video.title)}</h3><div class="video-meta"><span>Meu canal</span><span class="dot">•</span><span>${escapeHtml(video.date || 'Agora')}</span></div></div></article>`;
+    return `<article class="video-card" data-id="${escapeHtml(video.id)}" tabindex="0" role="button" aria-label="Assistir ${escapeHtml(video.title)}"><div class="thumbnail thumb-${gameKey}">${thumb}${cover}<span class="thumb-play">▶</span><span class="thumb-time">${escapeHtml(video.duration || 'Vídeo')}</span></div><div class="video-info"><div class="card-topline"><span class="game-badge ${gameKey}">${escapeHtml(video.game || 'Outros')}</span><span class="card-actions"><button class="like-button ${likeInfo(video.id).mine ? 'liked' : ''}" data-like="${escapeHtml(video.id)}" aria-label="Curtir vídeo">👍 <b>${likeInfo(video.id).count}</b></button><button class="favorite-button ${favorite ? 'liked' : ''}" data-favorite="${escapeHtml(video.id)}" aria-label="${favorite ? 'Remover dos' : 'Adicionar aos'} favoritos">${favorite ? '♥' : '♡'}</button></span></div><h3>${escapeHtml(video.title)}</h3><div class="video-meta"><span>Meu canal</span><span class="dot">•</span><span>${escapeHtml(video.date || 'Agora')}</span></div></div></article>`;
   }).join('');
   emptyState.hidden = matching.length > 0;
   document.querySelector('#videoCount').textContent = String(videos.length).padStart(2, '0');
@@ -63,25 +147,18 @@ function openVideo(video) {
   const player = document.querySelector('#modalPlayer');
   if (video.url) player.innerHTML = `<video src="${escapeHtml(video.url)}" controls autoplay playsinline>${video.captionUrl ? `<track kind="subtitles" src="${escapeHtml(video.captionUrl)}" srclang="pt-BR" label="Português" default>` : ''}</video>`;
   else player.innerHTML = '<div class="modal-placeholder"><div><span>▶</span><p>O arquivo desta gameplay ainda não foi cadastrado no catálogo.</p></div></div>';
-  document.querySelector('#videoModal').hidden = false; document.body.style.overflow = 'hidden'; renderSocial(video);
+  document.querySelector('#videoModal').hidden = false; document.body.style.overflow = 'hidden'; renderSocial(video); listenComments(video);
 }
-function closeModal() { document.querySelector('#videoModal').hidden = true; document.querySelector('#modalPlayer').innerHTML = ''; document.body.style.overflow = ''; activeVideoId = null; }
+function closeModal() { stopComments(); document.querySelector('#videoModal').hidden = true; document.querySelector('#modalPlayer').innerHTML = ''; document.body.style.overflow = ''; activeVideoId = null; }
 
 document.addEventListener('click', event => {
   const commentDelete = event.target.closest('[data-delete-comment]');
   if (commentDelete) {
     const [videoId, commentId] = commentDelete.dataset.deleteComment.split(':');
-    const comments = getComments(); comments[videoId] = (comments[videoId] || []).filter(comment => String(comment.id) !== commentId);
-    localStorage.setItem('replay-comments', JSON.stringify(comments)); renderSocial(videos.find(video => video.id === videoId)); return;
+    removeComment(videoId, commentId); return;
   }
   const likeButton = event.target.closest('[data-like]');
-  if (likeButton) {
-    event.stopPropagation(); const id = likeButton.dataset.like; const likes = getLikes();
-    if (likes[id]) delete likes[id]; else likes[id] = true;
-    localStorage.setItem('replay-likes', JSON.stringify(likes)); render();
-    if (activeVideoId === id) renderSocial(videos.find(video => video.id === id));
-    return;
-  }
+  if (likeButton) { event.stopPropagation(); toggleLike(likeButton.dataset.like); return; }
   const favoriteButton = event.target.closest('[data-favorite]');
   if (favoriteButton) {
     event.stopPropagation(); const id = favoriteButton.dataset.favorite; const favorites = getFavorites();
@@ -100,12 +177,15 @@ document.addEventListener('keydown', event => {
 document.querySelector('#searchInput').addEventListener('input', event => { state.search = event.target.value.trim(); render(); });
 document.querySelector('#modalClose').addEventListener('click', closeModal);
 document.querySelector('#videoModal').addEventListener('click', event => { if (event.target.id === 'videoModal') closeModal(); });
-document.querySelector('#commentForm').addEventListener('submit', event => {
+const nameInput = document.querySelector('#commentName');
+try { nameInput.value = localStorage.getItem('replay-name') || ''; } catch {}
+document.querySelector('#commentForm').addEventListener('submit', async event => {
   event.preventDefault(); if (!activeVideoId) return;
-  const input = document.querySelector('#commentInput'); const text = input.value.trim(); if (!text) return;
-  const comments = getComments(); comments[activeVideoId] ||= [];
-  comments[activeVideoId].push({ id: String(Date.now()), text, date: new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date()) });
-  localStorage.setItem('replay-comments', JSON.stringify(comments)); input.value = ''; renderSocial(videos.find(video => video.id === activeVideoId));
+  const video = videos.find(item => item.id === activeVideoId); if (!video) return;
+  const input = document.querySelector('#commentInput'); const text = input.value.trim().slice(0, 500); if (!text) return;
+  const name = nameInput.value.trim().slice(0, 40);
+  try { localStorage.setItem('replay-name', name); } catch {}
+  if (await postComment(video, name, text)) { input.value = ''; if (!cloud.on) renderSocial(video); }
 });
 document.querySelector('#likedNav').addEventListener('click', () => { state.favoritesOnly = !state.favoritesOnly; state.filter = 'Todos'; document.querySelector('#videos').scrollIntoView({ behavior: 'smooth' }); render(); });
 document.querySelector('#viewAll').addEventListener('click', () => { state.filter = 'Todos'; state.favoritesOnly = false; document.querySelector('#searchInput').value = ''; state.search = ''; render(); });
@@ -129,3 +209,4 @@ installButton.addEventListener('click', async () => {
 window.addEventListener('appinstalled', () => { installButton.hidden = true; showToast('Replay instalado no seu aparelho!'); });
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
 render();
+initCloud();

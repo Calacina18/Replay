@@ -66,7 +66,11 @@
     </main>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <div class="modal-backdrop" id="videoModal" hidden><div class="video-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Fechar">×</button><div class="modal-player" id="modalPlayer"></div><div class="modal-info"><span class="modal-game" id="modalGame"></span><h2 id="modalTitle"></h2><p id="modalMeta"></p></div><section class="modal-social" aria-label="Curtidas e comentários"><button class="modal-like" id="modalLike">👍 <span id="modalLikeText">Curtir</span> <b id="modalLikeCount">0</b></button><form id="commentForm" class="comment-form"><input id="commentInput" maxlength="500" placeholder="Deixe um comentário carinhoso..." aria-label="Escrever comentário" required /><button type="submit" class="upload-button">Comentar</button></form><div class="comments-list" id="commentsList"></div></section></div></div>
+  <div class="modal-backdrop" id="videoModal" hidden><div class="video-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Fechar">×</button><div class="modal-player" id="modalPlayer"></div><div class="modal-info"><span class="modal-game" id="modalGame"></span><h2 id="modalTitle"></h2><p id="modalMeta"></p></div><section class="modal-social" aria-label="Curtidas e comentários"><button class="modal-like" id="modalLike">👍 <span id="modalLikeText">Curtir</span> <b id="modalLikeCount">0</b></button><form id="commentForm" class="comment-form"><input id="commentName" maxlength="40" placeholder="Seu nome (opcional)" aria-label="Seu nome" autocomplete="nickname" /><input id="commentInput" maxlength="500" placeholder="Deixe um comentário carinhoso..." aria-label="Escrever comentário" required /><button type="submit" class="upload-button">Comentar</button></form><div class="comments-list" id="commentsList"></div></section></div></div>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
   <script src="catalogo.js"></script>
   <script src="app.js"></script>
 </body>
