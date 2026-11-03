@@ -1,5 +1,5 @@
 // Jogos disponíveis nos filtros. Altere esta lista para adicionar ou remover jogos.
-window.REPLAY_GAMES = ['Minecraft', "that's not my neighbor"];
+window.REPLAY_GAMES = ['Minecraft', "that's not my neighbor", 'Outlast'];
 
 // Catálogo fixo do site. Para adicionar um vídeo, copie um item e altere os dados.
 // Coloque o arquivo em videos/ e use caminhos relativos, por exemplo: videos/valorant-ace.mp4
@@ -15,6 +15,18 @@ window.REPLAY_VIDEOS = [
     description: 'Gameplay de That’s Not My Neighbor.',
     url: 'videos/thats-not-my-neighbor.mp4',
     coverUrl: 'videos/capas/thats-not-my-neighbor.png'
+  },
+  {
+    id: 'v2',
+    title: 'Jogando Outlast',
+    game: 'Outlast',
+    date: '3 de novembro',
+    duration: '26:50',
+    kind: 'other',
+    symbol: '✦',
+    description: 'Gameplay de Outlast.',
+    url: 'videos/outlast-web.mp4',
+    coverUrl: 'videos/capas/outlast.png'
   },
 
 
