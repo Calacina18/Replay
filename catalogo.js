@@ -20,12 +20,15 @@ window.REPLAY_VIDEOS = [
     id: 'v2',
     title: 'Jogando Outlast',
     game: 'Outlast',
-    date: '3 de novembro',
+    date: '4 de novembro',
     duration: '26:50',
     kind: 'other',
     symbol: '✦',
-    description: 'Gameplay de Outlast.',
-    url: 'videos/outlast-web.mp4',
+    description: 'Gameplay original em Full HD, dividida em duas partes para tocar sem parar.',
+    segments: [
+      'https://github.com/Calacina18/Replay/releases/download/outlast-original-v1/outlast-parte-0.mp4',
+      'https://github.com/Calacina18/Replay/releases/download/outlast-original-v1/outlast-parte-1.mp4'
+    ],
     coverUrl: 'videos/capas/outlast.png'
   },
 

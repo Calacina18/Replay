@@ -145,7 +145,21 @@ function openVideo(video) {
   document.querySelector('#modalGame').textContent = video.game || 'Outros';
   document.querySelector('#modalMeta').textContent = `${video.description || 'Um momento especial do canal.'} · ${video.date || 'Agora'}`;
   const player = document.querySelector('#modalPlayer');
-  if (video.url) player.innerHTML = `<video src="${escapeHtml(video.url)}" controls autoplay playsinline>${video.captionUrl ? `<track kind="subtitles" src="${escapeHtml(video.captionUrl)}" srclang="pt-BR" label="Português" default>` : ''}</video>`;
+  const segments = Array.isArray(video.segments) ? video.segments : null;
+  if (video.url || segments?.length) {
+    player.innerHTML = `<video src="${escapeHtml(segments?.[0] || video.url)}" controls autoplay playsinline>${video.captionUrl ? `<track kind="subtitles" src="${escapeHtml(video.captionUrl)}" srclang="pt-BR" label="Português" default>` : ''}</video>`;
+    const playerVideo = player.querySelector('video');
+    if (segments?.length > 1) {
+      let segmentIndex = 0;
+      playerVideo.addEventListener('ended', () => {
+        segmentIndex += 1;
+        if (segmentIndex < segments.length) {
+          playerVideo.src = segments[segmentIndex];
+          playerVideo.play().catch(() => showToast('Toque em reproduzir para continuar o vídeo.'));
+        }
+      });
+    }
+  }
   else player.innerHTML = '<div class="modal-placeholder"><div><span>▶</span><p>O arquivo desta gameplay ainda não foi cadastrado no catálogo.</p></div></div>';
   document.querySelector('#videoModal').hidden = false; document.body.style.overflow = 'hidden'; renderSocial(video); listenComments(video);
 }
