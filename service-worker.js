@@ -1,4 +1,4 @@
-const CACHE_NAME = 'replay-app-v6';
+const CACHE_NAME = 'replay-app-v7';
 const APP_FILES = [
   './',
   './index.html',
@@ -30,6 +30,14 @@ self.addEventListener('fetch', event => {
   if (requestUrl.pathname.startsWith('/api/')) return;
   // Gameplay files can be very large; do not fill the offline cache with videos.
   if (/\.(mp4|mov|mkv|webm|vtt)$/i.test(requestUrl.pathname)) return;
+  // Always revalidate the app shell so a hosted catalog change appears on return.
+  if (/\.(html|css|js|webmanifest)$/i.test(requestUrl.pathname) || requestUrl.pathname.endsWith('/Replay/')) {
+    event.respondWith(fetch(new Request(event.request, { cache: 'no-cache' })).then(response => {
+      if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request).then(cached => cached || (event.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()))));
+    return;
+  }
   event.respondWith(caches.match(event.request).then(cached => {
     if (cached) return cached;
     return fetch(event.request).then(response => {

@@ -221,6 +221,6 @@ installButton.addEventListener('click', async () => {
   if (result.outcome === 'accepted') showToast('Replay instalado no seu aparelho!');
 });
 window.addEventListener('appinstalled', () => { installButton.hidden = true; showToast('Replay instalado no seu aparelho!'); });
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(() => {}));
 render();
 initCloud();
